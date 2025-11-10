@@ -1,0 +1,62 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_CREDS_ID = 'aws-credentials'
+        AWS_KEY_ID   = 'aws-ssh-key'
+    }
+
+    stages {
+        stage('1. Install Dependencies') {
+            steps {
+                sh 'pip install ansible awscli' // Install tools in the Jenkins workspace
+            }
+        }
+
+        stage('2. Build Infrastructure (Terraform)') {
+            steps {
+                // Use the AWS_CREDS_ID to inject AWS keys
+                withCredentials([aws(credentialsId: AWS_CREDS_ID, accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                    sh 'terraform init'
+                    sh 'terraform apply -auto-approve'
+                }
+            }
+        }
+
+        stage('3. Create Ansible Inventory') {
+            steps {
+                // Get the IP from Terraform's output
+                // Create the 'inventory' file automatically
+                sh '''
+                    IP=$(terraform output -raw server_public_ip)
+                    echo "[app_server]" > inventory
+                    echo "$IP ansible_user=ec2-user ansible_ssh_private_key_file=${AWS_KEY_FILE}" >> inventory
+                '''
+            }
+        }
+
+        stage('4. Configure & Deploy (Ansible)') {
+            steps {
+                // Use the AWS_KEY_ID to inject the .pem file
+                withCredentials([sshUserPrivateKey(credentialsId: AWS_KEY_ID, keyFileVariable: 'AWS_KEY_FILE')]) {
+                    // Wait 60s for the server to be ready for SSH
+                    sh 'sleep 60'
+
+                    sh 'ansible-playbook -i inventory playbook.yml --ssh-extra-args="-o StrictHostKeyChecking=no"'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            stage('5. Destroy Infrastructure (Terraform)') {
+                steps {
+                    withCredentials([aws(credentialsId: AWS_CREDS_ID, accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        sh 'terraform destroy -auto-approve'
+                    }
+                }
+            }
+        }
+    }
+}
