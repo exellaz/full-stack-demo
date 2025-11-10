@@ -216,3 +216,9 @@ __marimo__/
 .streamlit/secrets.toml
 
 .devcontainer
+
+.terraform
+terraform.tfstate
+terraform.tfstate.backup
+
+inventory.ini
