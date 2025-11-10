@@ -7,13 +7,7 @@ pipeline {
     }
 
     stages {
-        stage('1. Install Dependencies') {
-            steps {
-                sh 'pip install ansible awscli' // Install tools in the Jenkins workspace
-            }
-        }
-
-        stage('2. Build Infrastructure (Terraform)') {
+        stage('1. Build Infrastructure (Terraform)') {
             steps {
                 // Use the AWS_CREDS_ID to inject AWS keys
                 withCredentials([aws(credentialsId: AWS_CREDS_ID, accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
@@ -23,7 +17,7 @@ pipeline {
             }
         }
 
-        stage('3. Create Ansible Inventory') {
+        stage('2. Create Ansible Inventory') {
             steps {
                 // Get the IP from Terraform's output
                 // Create the 'inventory' file automatically
@@ -35,7 +29,7 @@ pipeline {
             }
         }
 
-        stage('4. Configure & Deploy (Ansible)') {
+        stage('3. Configure & Deploy (Ansible)') {
             steps {
                 // Use the AWS_KEY_ID to inject the .pem file
                 withCredentials([sshUserPrivateKey(credentialsId: AWS_KEY_ID, keyFileVariable: 'AWS_KEY_FILE')]) {
