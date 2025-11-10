@@ -1,0 +1,94 @@
+---
+- name: Configure demo server
+  hosts: app_server
+  become: yes # Means runs as root
+  tasks:
+    - name: Wait for server to be ready for SSH
+      wait_for_connection:
+        timeout: 120
+
+    - name: Install Docker dependencies
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+        update_cache: yes
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker APT repository
+      apt_repository:
+        repo: >
+          deb [arch=amd64] https://download.docker.com/linux/ubuntu
+          {{ ansible_lsb.codename }} stable
+        state: present
+        filename: docker
+
+    - name: Install Docker Engine
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: present
+        update_cache: yes
+
+    - name: Ensure Docker is started and enabled
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Add user to docker group
+      user:
+        name: "ubuntu"
+        groups: docker
+        append: yes
+
+    - name: Wait for Docker socket to become available
+      wait_for:
+        path: /var/run/docker.sock
+        state: present
+        timeout: 30
+
+    - name: Create directory for Docker Compose
+      ansible.builtin.file:
+        path: /usr/local/lib/docker/cli-plugins
+        state: directory
+        mode: '0755'
+
+    - name: Install Docker Compose
+      ansible.builtin.get_url:
+        url: "https://github.com/docker/compose/releases/download/v2.40.3/docker-compose-linux-x86_64"
+        dest: /usr/local/lib/docker/cli-plugins/docker-compose
+        mode: '0755'
+
+    - name: Apply executable permissions to Docker Compose
+      file:
+        path: /usr/local/lib/docker/cli-plugins
+        mode: '+x'
+
+    - name: Install Git
+      ansible.builtin.package:
+        name: git
+        state: present
+
+    - name: Clone the application repository
+      ansible.builtin.git:
+        repo: https://github.com/exellaz/full-stack-demo
+        dest: /home/ubuntu/app
+      become: no
+
+    - name: Run Docker Compose to start the application
+      ansible.builtin.command:
+        docker compose -f /home/ubuntu/app/docker-compose.yml up -d
+      args:
+        chdir: /home/ubuntu/app
+
