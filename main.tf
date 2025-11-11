@@ -1,3 +1,11 @@
+terraform {
+  backend "s3" {
+    bucket = "demo-tf-state-1a2b3c4d"
+    key    = "demo/terraform.tfstate"
+    region = "us-east-1"
+  }
+}
+
 provider "aws" {
   region = "us-east-1"
 }
@@ -48,12 +56,12 @@ resource "aws_security_group" "app_sg" {
 
 resource "aws_instance" "app_server" {
   # A free-tier-eligible Amazon Linux 2 AMI in us-east-1
-  ami           = "ami-0fc5d935ebf8bc3bc"
-  instance_type = "t2.micro"
+  ami             = "ami-0fc5d935ebf8bc3bc"
+  instance_type   = "t2.micro"
   security_groups = [aws_security_group.app_sg.name]
 
   # IMPORTANT: Change this to the key pair name you created in the AWS console
-  key_name      = "my-aws-key"
+  key_name = "my-aws-key"
 
   tags = {
     Name = "Demo-Server"
