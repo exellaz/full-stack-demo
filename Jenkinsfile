@@ -20,7 +20,10 @@ pipeline {
 
        stage('2. Configure & Deploy (Ansible)') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: AWS_KEY_ID, keyFileVariable: 'AWS_KEY_FILE')]) {
+                withCredentials([
+                    aws(credentialsId: AWS_CREDS_ID, accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'),
+                    sshUserPrivateKey(credentialsId: AWS_KEY_ID, keyFileVariable: 'AWS_KEY_FILE')
+                ]) {
                     sh '''
                         IP=$(terraform output -raw server_public_ip)
                         echo "[app_server]" > inventory
