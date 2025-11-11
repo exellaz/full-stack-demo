@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from redis import Redis
-import os
 from prometheus_fastapi_instrumentator import Instrumentator
 
 app = FastAPI()
