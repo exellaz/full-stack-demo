@@ -11,7 +11,7 @@ pipeline {
             steps {
                 // Use the AWS_CREDS_ID to inject AWS keys
                 withCredentials([aws(credentialsId: AWS_CREDS_ID, accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                    sh 'terraform init -input=false'
+                    sh 'terraform init -force-copy'
                     sh 'terraform apply -auto-approve'
                 }
             }
