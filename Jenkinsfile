@@ -20,13 +20,14 @@ pipeline {
         stage('2. Create Ansible Inventory') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: AWS_KEY_ID, keyFileVariable: 'AWS_KEY_FILE')]) {
-                // Get the IP from Terraform's output
-                // Create the 'inventory' file automatically
-                sh '''
-                    IP=$(terraform output -raw server_public_ip)
-                    echo "[app_server]" > inventory
-                    echo "$IP ansible_user=ubuntu ansible_ssh_private_key_file=${AWS_KEY_FILE}" >> inventory
-                '''
+                    // Get the IP from Terraform's output
+                    // Create the 'inventory' file automatically
+                    sh '''
+                        IP=$(terraform output -raw server_public_ip)
+                        echo "[app_server]" > inventory
+                        echo "$IP ansible_user=ubuntu ansible_ssh_private_key_file=${AWS_KEY_FILE}" >> inventory
+                    '''
+                }
             }
         }
 
