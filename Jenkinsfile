@@ -34,15 +34,4 @@ pipeline {
             }
         }
     }
-
-    post {
-        always {
-            echo '--- RUNNING POST-BUILD CLEANUP (TERRAFORM DESTROY) ---'
-            withCredentials([aws(credentialsId: AWS_CREDS_ID, accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
-                // Add "|| true" to prevents the 'destroy' step from failing the entire
-                // pipeline's "green" status if something goes wrong.
-                sh 'terraform destroy -auto-approve || true'
-            }
-        }
-    }
 }
